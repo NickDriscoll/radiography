@@ -6,12 +6,18 @@ int main(int argc, char *argv[])
 {
 	GtkBuilder      *builder;
 	GtkWidget       *window;
+    GtkTreeModel* address_list_model;
+    GtkListStore* address_list_store;
 
 	gtk_init(&argc, &argv);
 
 	builder = gtk_builder_new_from_file("radiography.glade");
 
 	window = GET_WIDGET(builder, "xraywindow");
+    address_list_model = GET_WIDGET(builder, "address_list_model");
+
+    address_list_store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
+
 	gtk_builder_connect_signals(builder, NULL);
 
 	g_object_unref(builder);
@@ -30,5 +36,8 @@ void on_window_main_destroy()
 
 void jump_to_address(GtkButton* button, gpointer user_data)
 {
-
+    GtkListStore* store = (GtkListStore*)user_data;
+    GtkTreeIter iter;
+    gtk_list_store_append(store, &iter);
+    
 }
