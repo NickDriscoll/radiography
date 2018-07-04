@@ -1,5 +1,6 @@
 #include <gtk/gtk.h>
 #define GET_WIDGET(builder, x) GTK_WIDGET(gtk_builder_get_object(builder, x))
+#define GET_COLUMN(builder, x) GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, x))
 
 void jump_to_address(GtkWidget* button, gpointer user_data);
 
@@ -22,8 +23,8 @@ int main(int argc, char *argv[])
 	window = GET_WIDGET(builder, "xraywindow");
     jump_button = GET_WIDGET(builder, "jump_button");
     address_list_view = GET_WIDGET(builder, "address_list_view");
-    address_column = GET_WIDGET(builder, "address_column");
-    value_column = GET_WIDGET(builder, "value_column");
+    address_column = GET_COLUMN(builder, "address_column");
+    value_column = GET_COLUMN(builder, "value_column");
 
     address_list_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
