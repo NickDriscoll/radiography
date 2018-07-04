@@ -5,7 +5,7 @@
   <object class="GtkWindow" id="xraywindow">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Radiography</property>
-    <property name="default_width">400</property>
+    <property name="default_width">500</property>
     <property name="default_height">900</property>
     <signal name="destroy" handler="on_window_main_destroy" swapped="no"/>
     <child>
@@ -20,9 +20,11 @@
             <property name="can_focus">False</property>
             <property name="column_homogeneous">True</property>
             <child>
-              <object class="GtkEntry" id="entry2">
+              <object class="GtkEntry" id="pid_entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="input_purpose">digits</property>
+                <signal name="insert-text" handler="on_pid_text_entry" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -47,6 +49,7 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="xalign">0.34999999403953552</property>
+                <signal name="clicked" handler="attach_to_process" object="pid_entry" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">2</property>
@@ -70,7 +73,7 @@
               <object class="GtkLabel" id="addr_label">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Enter the desired starting address</property>
+                <property name="label" translatable="yes">Enter the desired starting address (in hex)</property>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -91,9 +94,10 @@
               </packing>
             </child>
             <child>
-              <object class="GtkEntry" id="entry1">
+              <object class="GtkEntry" id="address_entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <signal name="insert-text" handler="on_pid_text_entry" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">0</property>

@@ -1,4 +1,6 @@
 #include <gtk/gtk.h>
+#include <stdlib.h>
+#include <string.h>
 #define GET_WIDGET(builder, x) GTK_WIDGET(gtk_builder_get_object(builder, x))
 #define GET_COLUMN(builder, x) GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, x))
 
@@ -60,6 +62,25 @@ int main(int argc, char *argv[])
 void on_window_main_destroy()
 {
 	gtk_main_quit();
+}
+
+void on_pid_text_entry(GtkEntry *entry, gchar* string, gpointer user_data)
+{
+    if (string[strlen(string) - 1] < 48 || string[strlen(string) - 1] > 57)
+        string[strlen(string) - 1] = '\0';
+}
+
+void attach_to_process(GtkWidget* button, gpointer user_data)
+{
+    GtkEntry* pid_entry = (GtkEntry*)user_data;
+    FILE* f;
+    char* file_path;
+
+    /* Make*/
+
+    sprintf(file_path, "/proc/%i/comm", atoi(gtk_entry_get_text(pid_entry)));
+    //f = fopen(file_path, "r");
+
 }
 
 void jump_to_address(GtkWidget* button, gpointer user_data)
