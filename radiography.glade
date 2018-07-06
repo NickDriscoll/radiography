@@ -49,7 +49,6 @@
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="xalign">0.34999999403953552</property>
-                <signal name="clicked" handler="attach_to_process" object="pid_entry" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">2</property>
