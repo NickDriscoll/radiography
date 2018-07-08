@@ -14,6 +14,7 @@
 
 void jump_to_address(GtkWidget* button, gpointer user_data);
 void attach_to_process(GtkWidget* button, gpointer user_data);
+void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_text, gpointer user_data);
 
 typedef unsigned char byte;
 
@@ -31,19 +32,25 @@ typedef struct
 	pid_t*		pid;
 } read_s;
 
+enum
+{
+	COLUMN_ADDRESS,
+	COLUMN_VALUE
+};
+
 int main(int argc, char *argv[])
 {
 	/*Actual program variables */
 	pid_t target_pid;
 
 	/* GUI variables */
-	GtkBuilder*			builder;
-	GtkWindow*			window;
-	GtkWidget*			jump_button;
-	GtkWidget*			pid_button;
-	GtkWidget*			address_list_view;
-	GtkEntry*			pid_entry;
-	GtkEntry*			address_entry;
+	GtkBuilder*				builder;
+	GtkWindow*				window;
+	GtkWidget*				jump_button;
+	GtkWidget*				pid_button;
+	GtkWidget*				address_list_view;
+	GtkEntry*				pid_entry;
+	GtkEntry*				address_entry;
 	GtkTreeViewColumn*		address_column;
 	GtkTreeViewColumn*		value_column;
 	GtkListStore*			address_list_store;
@@ -88,6 +95,10 @@ int main(int argc, char *argv[])
 	address_renderer = gtk_cell_renderer_text_new();
 	value_renderer = gtk_cell_renderer_text_new();
 
+	/* Allow the value to be user-editable */
+	g_object_set(value_renderer, "editable", TRUE, NULL);
+	g_signal_connect(value_renderer, "edited", G_CALLBACK(renderer_edit), address_list_store);
+
 	/* Connect the columns to their renderers */
 	gtk_tree_view_column_pack_start(address_column, address_renderer, TRUE);
 	gtk_tree_view_column_pack_start(value_column, value_renderer, TRUE);
@@ -115,6 +126,21 @@ void on_pid_text_entry(GtkEntry *entry, gchar* string, gpointer user_data)
 {
 	if (string[strlen(string) - 1] < 48 || string[strlen(string) - 1] > 57)
 		string[strlen(string) - 1] = '\0';
+}
+
+void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_text, gpointer user_data)
+{
+	GtkListStore*			address_list_store;
+	GtkTreeIter 			iter;
+
+	address_list_store = (GtkListStore*)user_data;
+	if (!gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(address_list_store), &iter, path_string))
+	{
+		perror("Error editing cell");
+	}
+
+	gtk_list_store_set(address_list_store, &iter, COLUMN_VALUE, new_text, -1);
+
 }
 
 void attach_to_process(GtkWidget* button, gpointer user_data)
@@ -156,10 +182,12 @@ void attach_to_process(GtkWidget* button, gpointer user_data)
 void jump_to_address(GtkWidget* button, gpointer user_data)
 {
 	GtkListStore*		store;
-	GtkTreeIter		iter;
-	pid_t			target_pid;
-	struct iovec* local_vec;
-	struct iovec* remote_vec;
+	GtkTreeIter			iter;
+	pid_t				target_pid;
+	struct iovec* 		local_vec;
+	struct iovec* 		remote_vec;
+
+	const int NUMBER_OF_BYTES_TO_READ = 100;
 
 	read_s* args = user_data;
 	store = args->list_store;
@@ -168,20 +196,23 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	remote_vec = malloc(sizeof(struct iovec));
 
 	/* Set up local vector */
-	local_vec->iov_len = 100;
+	local_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
 	local_vec->iov_base = malloc(local_vec->iov_len);
 
 	/* Set up remote vector */
-	remote_vec->iov_len = 100;
-	remote_vec->iov_base = (void*)atoll(gtk_entry_get_text(args->entry));
+	remote_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
+	remote_vec->iov_base = (void*)strtoll(gtk_entry_get_text(args->entry), NULL, 16);
 
 	/* Read memory from process */
-	process_vm_readv(target_pid, local_vec, 1, remote_vec, 1, 0);
+	if (process_vm_readv(target_pid, local_vec, 1, remote_vec, 1, 0) == -1)
+	{
+		perror("Error reading process memory");
+	}
 
 	gtk_list_store_append(store, &iter);
 	gtk_list_store_set(store, &iter,
-	                   0, "Test",
-	                   1, "Text",
+	                   COLUMN_ADDRESS, "Test",
+	                   COLUMN_VALUE, "Text",
 	                   -1);
 
 	free(local_vec->iov_base);
