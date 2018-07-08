@@ -96,7 +96,6 @@
               <object class="GtkEntry" id="address_entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <signal name="insert-text" handler="on_pid_text_entry" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">0</property>
