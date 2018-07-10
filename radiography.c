@@ -28,7 +28,7 @@ typedef struct
 typedef struct
 {
 	GtkListStore*	list_store;
-	GtkEntry*	entry;
+	GtkEntry*		entry;
 	pid_t*		pid;
 } read_s;
 
@@ -186,6 +186,9 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	pid_t				target_pid;
 	struct iovec* 		local_vec;
 	struct iovec* 		remote_vec;
+	int 				i;
+	char				addr_string[BUFFER_SIZE];
+	char				value_string[BUFFER_SIZE];
 
 	const int NUMBER_OF_BYTES_TO_READ = 100;
 
@@ -209,11 +212,20 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 		perror("Error reading process memory");
 	}
 
-	gtk_list_store_append(store, &iter);
-	gtk_list_store_set(store, &iter,
-	                   COLUMN_ADDRESS, "Test",
-	                   COLUMN_VALUE, "Text",
-	                   -1);
+	/* Reove past entries */
+	gtk_list_store_clear(store);
+
+	for (i = 0; i < NUMBER_OF_BYTES_TO_READ; i++)
+	{
+		sprintf(addr_string, "%p", (void*)(remote_vec->iov_base + i));
+		sprintf(value_string, "%i", ((byte*)local_vec->iov_base)[i]);
+
+		gtk_list_store_append(store, &iter);
+		gtk_list_store_set(store, &iter,
+				   COLUMN_ADDRESS, addr_string,
+				   COLUMN_VALUE, value_string,
+				   -1);
+	}
 
 	free(local_vec->iov_base);
 	free(local_vec);
