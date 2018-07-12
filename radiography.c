@@ -145,7 +145,7 @@ void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_tex
 	struct iovec*			local;
 	struct iovec*			remote;
 	byte					value_to_poke;
-	char				buffer[BUFFER_SIZE];
+	gchar*					buffer;
 
 	args = (edit_s*)user_data;
 	value_to_poke = atoi(new_text);
