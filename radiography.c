@@ -32,6 +32,12 @@ typedef struct
 	pid_t*		pid;
 } read_s;
 
+typedef struct
+{
+	GtkListStore*		list_store;
+	pid_t* 				pid;
+} edit_s;
+
 enum
 {
 	COLUMN_ADDRESS,
@@ -83,6 +89,10 @@ int main(int argc, char *argv[])
 	read_struct->entry = address_entry;
 	read_struct->pid = &target_pid;
 
+	edit_s* edit_struct = malloc(sizeof(edit_s));
+	edit_struct->list_store = address_list_store;
+	edit_struct->pid = &target_pid;
+
 	/* Connect signals with callback functions */
 	gtk_builder_connect_signals(builder, NULL);
 	g_signal_connect(jump_button, "clicked", G_CALLBACK(jump_to_address), read_struct);
@@ -97,7 +107,7 @@ int main(int argc, char *argv[])
 
 	/* Allow the value to be user-editable */
 	g_object_set(value_renderer, "editable", TRUE, NULL);
-	g_signal_connect(value_renderer, "edited", G_CALLBACK(renderer_edit), address_list_store);
+	g_signal_connect(value_renderer, "edited", G_CALLBACK(renderer_edit), edit_struct);
 
 	/* Connect the columns to their renderers */
 	gtk_tree_view_column_pack_start(address_column, address_renderer, TRUE);
@@ -130,17 +140,37 @@ void on_pid_text_entry(GtkEntry *entry, gchar* string, gpointer user_data)
 
 void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_text, gpointer user_data)
 {
-	GtkListStore*			address_list_store;
+	edit_s*					args;
 	GtkTreeIter 			iter;
+	struct iovec*			local;
+	struct iovec*			remote;
+	byte					value_to_poke;
+	char				buffer[BUFFER_SIZE];
 
-	address_list_store = (GtkListStore*)user_data;
-	if (!gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(address_list_store), &iter, path_string))
+	args = (edit_s*)user_data;
+	value_to_poke = atoi(new_text);
+	if (!gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(args->list_store), &iter, path_string))
 	{
 		perror("Error editing cell");
 	}
 
-	gtk_list_store_set(address_list_store, &iter, COLUMN_VALUE, new_text, -1);
+	/* Set up the iovecs */
+	local = malloc(sizeof(struct iovec));
+	remote = malloc(sizeof(struct iovec));
 
+	local->iov_base = &value_to_poke;
+	local->iov_len = 1;
+	gtk_tree_model_get(GTK_TREE_MODEL(args->list_store), &iter, COLUMN_ADDRESS, &buffer, -1);
+	remote->iov_base = (void*)strtoll(buffer, NULL, 16);
+	remote->iov_len = 1;
+
+	/* Actually edit process memory */
+	if (process_vm_writev(*args->pid, local, 1, remote, 1, 0) == -1)
+	{
+		perror("Error writing process memory");
+	}
+
+	gtk_list_store_set(args->list_store, &iter, COLUMN_VALUE, new_text, -1);
 }
 
 void attach_to_process(GtkWidget* button, gpointer user_data)
@@ -156,7 +186,6 @@ void attach_to_process(GtkWidget* button, gpointer user_data)
 
 	/* Make file_path string */
 	sprintf(file_path, "/proc/%i/comm", new_pid);
-
 
 	f = fopen(file_path, "r");
 	if (f == NULL)
