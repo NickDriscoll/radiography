@@ -15,6 +15,7 @@
 void jump_to_address(GtkWidget* button, gpointer user_data);
 void attach_to_process(GtkWidget* button, gpointer user_data);
 void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_text, gpointer user_data);
+gboolean update_list(gpointer data);
 
 typedef unsigned char byte;
 
@@ -29,7 +30,9 @@ typedef struct
 {
 	GtkListStore*	list_store;
 	GtkEntry*		entry;
-	pid_t*		pid;
+	void**			remote_address;
+	pid_t*			pid;
+	char 			has_timer;
 } read_s;
 
 typedef struct
@@ -44,10 +47,13 @@ enum
 	COLUMN_VALUE
 };
 
+const int NUMBER_OF_BYTES_TO_READ = 1024;
+
 int main(int argc, char *argv[])
 {
 	/*Actual program variables */
 	pid_t target_pid;
+	void* remote_address;
 
 	/* GUI variables */
 	GtkBuilder*				builder;
@@ -87,7 +93,9 @@ int main(int argc, char *argv[])
 	read_s* read_struct = malloc(sizeof(read_s));
 	read_struct->list_store = address_list_store;
 	read_struct->entry = address_entry;
+	read_struct->remote_address = &remote_address;
 	read_struct->pid = &target_pid;
+	read_struct->has_timer = 0;
 
 	edit_s* edit_struct = malloc(sizeof(edit_s));
 	edit_struct->list_store = address_list_store;
@@ -219,8 +227,6 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	char				addr_string[BUFFER_SIZE];
 	char				value_string[BUFFER_SIZE];
 
-	const int NUMBER_OF_BYTES_TO_READ = 1024;
-
 	read_s* args = user_data;
 	store = args->list_store;
 	target_pid = *args->pid;
@@ -232,8 +238,9 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	local_vec->iov_base = malloc(local_vec->iov_len);
 
 	/* Set up remote vector */
+	*args->remote_address = (void*)strtoll(gtk_entry_get_text(args->entry), NULL, 16);
 	remote_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
-	remote_vec->iov_base = (void*)(strtoll(gtk_entry_get_text(args->entry), NULL, 16) - (NUMBER_OF_BYTES_TO_READ / 2));
+	remote_vec->iov_base = (void*)(*args->remote_address - (NUMBER_OF_BYTES_TO_READ / 2));
 
 	/* Read memory from process */
 	if (process_vm_readv(target_pid, local_vec, 1, remote_vec, 1, 0) == -1)
@@ -256,7 +263,62 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 				   -1);
 	}
 
+	/* Set the update callback */
+	if (!args->has_timer)
+	{
+		g_timeout_add_seconds(1, update_list, user_data);
+		args->has_timer = 1;
+	}
+
 	free(local_vec->iov_base);
 	free(local_vec);
 	free(remote_vec);
+}
+
+gboolean update_list(gpointer data)
+{
+	read_s* 			args = data;
+	GtkListStore* 		store;
+	GtkTreeIter 		iter;
+	struct iovec* 		local_vec;
+	struct iovec* 		remote_vec;
+	int 				i;
+	char 				addr_string[BUFFER_SIZE];
+	char 				value_string[BUFFER_SIZE];
+
+	store = args->list_store;
+	local_vec = malloc(sizeof(struct iovec));
+	remote_vec = malloc(sizeof(struct iovec));
+
+	/* Set up local vector */
+	local_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
+	local_vec->iov_base = malloc(local_vec->iov_len);
+
+	/* Set up remote vector */
+	remote_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
+	remote_vec->iov_base = (void*)(*args->remote_address - (NUMBER_OF_BYTES_TO_READ / 2));
+
+	/* Read memory from process */
+	process_vm_readv(*args->pid, local_vec, 1, remote_vec, 1, 0);
+
+	/* Reove past entries */
+	gtk_list_store_clear(store);
+
+	for (i = 0; i < NUMBER_OF_BYTES_TO_READ; i++)
+	{
+		sprintf(addr_string, "%p", (void*)(remote_vec->iov_base + i));
+		sprintf(value_string, "%i", ((byte*)local_vec->iov_base)[i]);
+
+		gtk_list_store_append(store, &iter);
+		gtk_list_store_set(store, &iter,
+				   COLUMN_ADDRESS, addr_string,
+				   COLUMN_VALUE, value_string,
+				   -1);
+	}
+
+	free(local_vec->iov_base);
+	free(local_vec);
+	free(remote_vec);
+
+	return TRUE;
 }
