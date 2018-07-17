@@ -280,6 +280,7 @@ gboolean update_list(gpointer data)
 	read_s* 			args = data;
 	GtkListStore* 		store;
 	GtkTreeIter 		iter;
+	gboolean 			valid;
 	struct iovec* 		local_vec;
 	struct iovec* 		remote_vec;
 	int 				i;
@@ -301,19 +302,20 @@ gboolean update_list(gpointer data)
 	/* Read memory from process */
 	process_vm_readv(*args->pid, local_vec, 1, remote_vec, 1, 0);
 
-	/* Reove past entries */
-	gtk_list_store_clear(store);
-
-	for (i = 0; i < NUMBER_OF_BYTES_TO_READ; i++)
+	/* Update current entries */
+	valid = gtk_tree_model_get_iter_first(GTK_TREE_MODEL(store), &iter);
+	i = 0;
+	while (valid)
 	{
 		sprintf(addr_string, "%p", (void*)(remote_vec->iov_base + i));
 		sprintf(value_string, "%i", ((byte*)local_vec->iov_base)[i]);
 
-		gtk_list_store_append(store, &iter);
 		gtk_list_store_set(store, &iter,
 				   COLUMN_ADDRESS, addr_string,
 				   COLUMN_VALUE, value_string,
 				   -1);
+		valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter);
+		i++;
 	}
 
 	free(local_vec->iov_base);
