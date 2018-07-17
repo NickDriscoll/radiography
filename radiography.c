@@ -219,7 +219,7 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	char				addr_string[BUFFER_SIZE];
 	char				value_string[BUFFER_SIZE];
 
-	const int NUMBER_OF_BYTES_TO_READ = 100;
+	const int NUMBER_OF_BYTES_TO_READ = 1024;
 
 	read_s* args = user_data;
 	store = args->list_store;
@@ -233,7 +233,7 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 
 	/* Set up remote vector */
 	remote_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
-	remote_vec->iov_base = (void*)strtoll(gtk_entry_get_text(args->entry), NULL, 16);
+	remote_vec->iov_base = (void*)(strtoll(gtk_entry_get_text(args->entry), NULL, 16) / 2);
 
 	/* Read memory from process */
 	if (process_vm_readv(target_pid, local_vec, 1, remote_vec, 1, 0) == -1)
