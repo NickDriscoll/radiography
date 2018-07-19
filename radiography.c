@@ -15,10 +15,12 @@
 void jump_to_address(GtkWidget* button, gpointer user_data);
 void attach_to_process(GtkWidget* button, gpointer user_data);
 void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_text, gpointer user_data);
+void on_edit(GtkCellRenderer* cell, GtkCellEditable* editable, gchar* path, gpointer user_data);
 gboolean update_list(gpointer data);
 
 typedef unsigned char byte;
 
+/* A struct to be passed to attach_to_process */
 typedef struct
 {
 	GtkWindow*	window;
@@ -26,27 +28,32 @@ typedef struct
 	pid_t*		pid;
 } attach_s;
 
+/* A struct to be passed to jump_to_address */
 typedef struct
 {
 	GtkListStore*	list_store;
 	GtkEntry*		entry;
 	void**			remote_address;
+	char			has_timer;
+	char			editing;
 	pid_t*			pid;
-	char 			has_timer;
 } read_s;
 
+/* A struct to be passed to renderer_edit */
 typedef struct
 {
 	GtkListStore*		list_store;
 	pid_t* 				pid;
 } edit_s;
 
+/* An enum representing what the two different columns store */
 enum
 {
 	COLUMN_ADDRESS,
 	COLUMN_VALUE
 };
 
+/* Constant definitions */
 const int NUMBER_OF_BYTES_TO_READ = 1024;
 
 int main(int argc, char *argv[])
@@ -96,6 +103,7 @@ int main(int argc, char *argv[])
 	read_struct->remote_address = &remote_address;
 	read_struct->pid = &target_pid;
 	read_struct->has_timer = 0;
+	read_struct->editing = 0;
 
 	edit_s* edit_struct = malloc(sizeof(edit_s));
 	edit_struct->list_store = address_list_store;
@@ -116,6 +124,7 @@ int main(int argc, char *argv[])
 	/* Allow the value to be user-editable */
 	g_object_set(value_renderer, "editable", TRUE, NULL);
 	g_signal_connect(value_renderer, "edited", G_CALLBACK(renderer_edit), edit_struct);
+	g_signal_connect(value_renderer, "editing-started", G_CALLBACK(on_edit), read_struct);
 
 	/* Connect the columns to their renderers */
 	gtk_tree_view_column_pack_start(address_column, address_renderer, TRUE);
@@ -275,6 +284,11 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	free(remote_vec);
 }
 
+void on_edit(GtkCellRenderer* cell, GtkCellEditable* editable, gchar* path, gpointer user_data)
+{
+	
+}
+
 gboolean update_list(gpointer data)
 {
 	read_s* 			args = data;
@@ -286,6 +300,9 @@ gboolean update_list(gpointer data)
 	int 				i;
 	char 				addr_string[BUFFER_SIZE];
 	char 				value_string[BUFFER_SIZE];
+
+	if (args->editing)
+		return TRUE;
 
 	store = args->list_store;
 	local_vec = malloc(sizeof(struct iovec));
