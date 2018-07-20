@@ -35,7 +35,7 @@ typedef struct
 	GtkEntry*		entry;
 	void**			remote_address;
 	char			has_timer;
-	char			editing;
+	char*			editing;
 	pid_t*			pid;
 } read_s;
 
@@ -44,6 +44,7 @@ typedef struct
 {
 	GtkListStore*		list_store;
 	pid_t* 				pid;
+	char*			editing;
 } edit_s;
 
 /* An enum representing what the two different columns store */
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
 	/*Actual program variables */
 	pid_t target_pid;
 	void* remote_address;
+	char editing = 0;
 
 	/* GUI variables */
 	GtkBuilder*				builder;
@@ -103,11 +105,12 @@ int main(int argc, char *argv[])
 	read_struct->remote_address = &remote_address;
 	read_struct->pid = &target_pid;
 	read_struct->has_timer = 0;
-	read_struct->editing = 0;
+	read_struct->editing = &editing;
 
 	edit_s* edit_struct = malloc(sizeof(edit_s));
 	edit_struct->list_store = address_list_store;
 	edit_struct->pid = &target_pid;
+	edit_struct->editing = &editing;
 
 	/* Connect signals with callback functions */
 	gtk_builder_connect_signals(builder, NULL);
@@ -188,6 +191,7 @@ void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_tex
 	}
 
 	gtk_list_store_set(args->list_store, &iter, COLUMN_VALUE, new_text, -1);
+	*args->editing = 0;
 }
 
 void attach_to_process(GtkWidget* button, gpointer user_data)
@@ -286,7 +290,9 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 
 void on_edit(GtkCellRenderer* cell, GtkCellEditable* editable, gchar* path, gpointer user_data)
 {
-	
+	read_s* args = user_data;
+
+	*args->editing = 1;
 }
 
 gboolean update_list(gpointer data)
@@ -301,7 +307,7 @@ gboolean update_list(gpointer data)
 	char 				addr_string[BUFFER_SIZE];
 	char 				value_string[BUFFER_SIZE];
 
-	if (args->editing)
+	if (*args->editing)
 		return TRUE;
 
 	store = args->list_store;
