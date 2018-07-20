@@ -279,7 +279,7 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	/* Set the update callback */
 	if (!args->has_timer)
 	{
-		g_timeout_add_seconds(1, update_list, user_data);
+		g_timeout_add(10, update_list, user_data);
 		args->has_timer = 1;
 	}
 
