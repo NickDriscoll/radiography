@@ -44,7 +44,7 @@ typedef struct
 {
 	GtkListStore*		list_store;
 	pid_t* 				pid;
-	char*			editing;
+	char*				editing;
 } edit_s;
 
 /* An enum representing what the two different columns store */
