@@ -347,3 +347,8 @@ gboolean update_list(gpointer data)
 
 	return TRUE;
 }
+
+void update_data_type(GtkComboBox *widget, gpointer user_data)
+{
+	
+}
