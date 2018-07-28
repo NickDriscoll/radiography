@@ -9,6 +9,7 @@
 #define GET_WINDOW(builder ,x) GTK_WINDOW(gtk_builder_get_object(builder, x))
 #define GET_ENTRY(builder, x) GTK_ENTRY(gtk_builder_get_object(builder, x))
 #define GET_COLUMN(builder, x) GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, x))
+#define GET_LIST(builder, x) GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, x))
 
 #define BUFFER_SIZE 1024
 
@@ -63,6 +64,7 @@ int main(int argc, char *argv[])
 	pid_t target_pid;
 	void* remote_address;
 	char editing = 0;
+	char data_type_bitmask = 0;
 
 	/* GUI variables */
 	GtkBuilder*				builder;
@@ -77,6 +79,7 @@ int main(int argc, char *argv[])
 	GtkListStore*			address_list_store;
 	GtkCellRenderer*		address_renderer;
 	GtkCellRenderer*		value_renderer;
+	GtkComboBoxText*		data_type_box;
 
 	gtk_init(&argc, &argv);
 
@@ -90,6 +93,7 @@ int main(int argc, char *argv[])
 	address_list_view = GET_WIDGET(builder, "address_list_view");
 	address_column = GET_COLUMN(builder, "address_column");
 	value_column = GET_COLUMN(builder, "value_column");
+	data_type_box = GET_LIST(builder, "data_type_box");
 
 	address_list_store = gtk_list_store_new(2, G_TYPE_STRING, G_TYPE_STRING);
 
@@ -116,6 +120,7 @@ int main(int argc, char *argv[])
 	gtk_builder_connect_signals(builder, NULL);
 	g_signal_connect(jump_button, "clicked", G_CALLBACK(jump_to_address), read_struct);
 	g_signal_connect(pid_button, "clicked", G_CALLBACK(attach_to_process), pid_struct);
+	g_signal_connect(data_type_box, "changed", G_CALLBACK(update_data_type), &data_type_bitmask);
 
 	/* Connect the list view to the list model */
 	gtk_tree_view_set_model(GTK_TREE_VIEW(address_list_view), GTK_TREE_MODEL(address_list_store));
@@ -350,5 +355,5 @@ gboolean update_list(gpointer data)
 
 void update_data_type(GtkComboBox *widget, gpointer user_data)
 {
-	
+
 }

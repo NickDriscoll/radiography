@@ -106,7 +106,6 @@
                   <item id="8" translatable="yes">float</item>
                   <item id="9" translatable="yes">double</item>
                 </items>
-                <signal name="changed" handler="update_data_type" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">2</property>
