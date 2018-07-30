@@ -384,5 +384,30 @@ void update_data_type(GtkComboBox *widget, gpointer user_data)
 			*mask = 0x81;
 			break;
 		}
+		case 5:		/* uint16 */
+		{
+			*mask = 0x82;
+			break;
+		}
+		case 6:		/* uint32 */
+		{
+			*mask = 0x84;
+			break;
+		}
+		case 7:		/* uint64 */
+		{
+			*mask = 0x88;
+			break;
+		}
+		case 8:		/* float */
+		{
+			*mask = 0x44;
+			break;
+		}
+		case 9:		/* double */
+		{
+			*mask = 0x48;
+			break;
+		}
 	}
 }
