@@ -38,6 +38,7 @@ typedef struct
 	char			has_timer;
 	char*			editing;
 	pid_t*			pid;
+	char*			data_type_mask;
 } read_s;
 
 /* A struct to be passed to renderer_edit */
@@ -110,6 +111,7 @@ int main(int argc, char *argv[])
 	read_struct->pid = &target_pid;
 	read_struct->has_timer = 0;
 	read_struct->editing = &editing;
+	read_struct->data_type_mask = &data_type_bitmask;
 
 	edit_s* edit_struct = malloc(sizeof(edit_s));
 	edit_struct->list_store = address_list_store;
@@ -251,14 +253,18 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	local_vec = malloc(sizeof(struct iovec));
 	remote_vec = malloc(sizeof(struct iovec));
 
+	/* Deconstruct bitmask */
+	int data_size = args->data_type_mask & 0x0F;
+	char is_signed = (args->data_type_mask & 0x80) == 0;
+
 	/* Set up local vector */
-	local_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
+	local_vec->iov_len = NUMBER_OF_BYTES_TO_READ * data_size;
 	local_vec->iov_base = malloc(local_vec->iov_len);
 
 	/* Set up remote vector */
 	*args->remote_address = (void*)strtoll(gtk_entry_get_text(args->entry), NULL, 16);
-	remote_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
-	remote_vec->iov_base = (void*)(*args->remote_address - (NUMBER_OF_BYTES_TO_READ / 2));
+	remote_vec->iov_len = NUMBER_OF_BYTES_TO_READ * data_size;
+	remote_vec->iov_base = (void*)(*args->remote_address - ((NUMBER_OF_BYTES_TO_READ * data_size) / 2));
 
 	/* Read memory from process */
 	if (process_vm_readv(target_pid, local_vec, 1, remote_vec, 1, 0) == -1)
@@ -269,7 +275,8 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	/* Reove past entries */
 	gtk_list_store_clear(store);
 
-	for (i = 0; i < NUMBER_OF_BYTES_TO_READ; i++)
+
+	for (i = 0; i < NUMBER_OF_BYTES_TO_READ * data_size; i += data_size)
 	{
 		sprintf(addr_string, "%p", (void*)(remote_vec->iov_base + i));
 		sprintf(value_string, "%i", ((byte*)local_vec->iov_base)[i]);
