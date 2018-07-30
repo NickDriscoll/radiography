@@ -355,12 +355,34 @@ gboolean update_list(gpointer data)
 
 void update_data_type(GtkComboBox *widget, gpointer user_data)
 {
-	char* data_type_bitmask = user_data;
+	const char* mask = user_data;
+	*mask = 0;
 	switch (gtk_combo_box_get_active(widget))
 	{
 		case 0:		/* int8 */
 		{
-
+			*mask = 0x01;
+			break;
+		}
+		case 1:		/* int16 */
+		{
+			*mask = 0x02
+			break;
+		}
+		case 2:		/* int32 */
+		{
+			*mask = 0x04;
+			break;
+		}
+		case 3:		/* int64 */
+		{
+			*mask = 0x08;
+			break;
+		}
+		case 4:		/* uint8 */
+		{
+			*mask = 0x81;
+			break;
 		}
 	}
 }
