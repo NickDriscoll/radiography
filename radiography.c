@@ -18,6 +18,7 @@ void attach_to_process(GtkWidget* button, gpointer user_data);
 void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_text, gpointer user_data);
 void on_edit(GtkCellRenderer* cell, GtkCellEditable* editable, gchar* path, gpointer user_data);
 gboolean update_list(gpointer data);
+void update_data_type(GtkComboBox *widget, gpointer user_data);
 
 typedef unsigned char byte;
 
@@ -254,8 +255,8 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	remote_vec = malloc(sizeof(struct iovec));
 
 	/* Deconstruct bitmask */
-	int data_size = args->data_type_mask & 0x0F;
-	char is_signed = (args->data_type_mask & 0x80) == 0;
+	int data_size = *args->data_type_mask & 0x0F;
+	char is_signed = (*args->data_type_mask & 0x80) == 0;
 
 	/* Set up local vector */
 	local_vec->iov_len = NUMBER_OF_BYTES_TO_READ * data_size;
@@ -274,7 +275,6 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 
 	/* Reove past entries */
 	gtk_list_store_clear(store);
-
 
 	for (i = 0; i < NUMBER_OF_BYTES_TO_READ * data_size; i += data_size)
 	{
@@ -362,7 +362,7 @@ gboolean update_list(gpointer data)
 
 void update_data_type(GtkComboBox *widget, gpointer user_data)
 {
-	const char* mask = user_data;
+	char* mask = user_data;
 	*mask = 0;
 	switch (gtk_combo_box_get_active(widget))
 	{
@@ -373,7 +373,7 @@ void update_data_type(GtkComboBox *widget, gpointer user_data)
 		}
 		case 1:		/* int16 */
 		{
-			*mask = 0x02
+			*mask = 0x02;
 			break;
 		}
 		case 2:		/* int32 */
