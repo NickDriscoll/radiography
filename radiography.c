@@ -360,13 +360,16 @@ gboolean update_list(gpointer data)
 	local_vec = malloc(sizeof(struct iovec));
 	remote_vec = malloc(sizeof(struct iovec));
 
+	/* Get size from bitmask */
+	int data_size = *args->data_type_mask & 0x0F;
+
 	/* Set up local vector */
-	local_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
+	local_vec->iov_len = NUMBER_OF_BYTES_TO_READ * data_size;
 	local_vec->iov_base = malloc(local_vec->iov_len);
 
 	/* Set up remote vector */
-	remote_vec->iov_len = NUMBER_OF_BYTES_TO_READ;
-	remote_vec->iov_base = (void*)(*args->remote_address - (NUMBER_OF_BYTES_TO_READ / 2));
+	remote_vec->iov_len = NUMBER_OF_BYTES_TO_READ * data_size;
+	remote_vec->iov_base = (void*)(*args->remote_address - ((NUMBER_OF_BYTES_TO_READ * data_size) / 2));
 
 	/* Read memory from process */
 	process_vm_readv(*args->pid, local_vec, 1, remote_vec, 1, 0);
@@ -377,7 +380,7 @@ gboolean update_list(gpointer data)
 	while (valid)
 	{
 		sprintf(addr_string, "%p", (void*)(remote_vec->iov_base + i));
-		sprintf(value_string, "%i", ((byte*)local_vec->iov_base)[i]);
+		determine_value_string(value_string, *args->data_type_mask, local_vec, i);
 
 		gtk_list_store_set(store, &iter,
 				   COLUMN_ADDRESS, addr_string,
