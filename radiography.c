@@ -237,6 +237,41 @@ void attach_to_process(GtkWidget* button, gpointer user_data)
 	*pid_struct->pid = new_pid;
 }
 
+void determine_value_string(char* value_string, char bitmask, struct iovec* local_vec, int i)
+{
+	/* Handle float and double */
+	if ((bitmask & 0x40) != 0)
+	{
+		if ((bitmask & 0x0F) == 4)
+			sprintf(value_string, "%f", ((float*)local_vec->iov_base)[i]);
+		else
+			sprintf(value_string, "%f", ((double*)local_vec->iov_base)[i]);
+	}
+
+	if ((bitmask & 0x80) == 0)
+	{
+		if ((bitmask & 0x0F) == 1)
+			sprintf(value_string, "%i", ((byte*)local_vec->iov_base)[i]);
+		else if ((bitmask & 0x0F) == 2)
+			sprintf(value_string, "%i", ((short*)local_vec->iov_base)[i]);
+		else if ((bitmask & 0x0F) == 4)
+			sprintf(value_string, "%i", ((int*)local_vec->iov_base)[i]);
+		else
+			sprintf(value_string, "%lld", ((long long*)local_vec->iov_base)[i]);
+	}
+	else
+	{
+		if ((bitmask & 0x0F) == 1)
+                        sprintf(value_string, "%u", ((byte*)local_vec->iov_base)[i]);
+                else if ((bitmask & 0x0F) == 2)
+                        sprintf(value_string, "%u", ((short*)local_vec->iov_base)[i]);
+                else if ((bitmask & 0x0F) == 4)
+                        sprintf(value_string, "%u", ((int*)local_vec->iov_base)[i]);
+                else
+                        sprintf(value_string, "%llu", ((long long*)local_vec->iov_base)[i]);
+	}
+}
+
 void jump_to_address(GtkWidget* button, gpointer user_data)
 {
 	GtkListStore*		store;
@@ -256,7 +291,6 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 
 	/* Deconstruct bitmask */
 	int data_size = *args->data_type_mask & 0x0F;
-	char is_signed = (*args->data_type_mask & 0x80) == 0;
 
 	/* Set up local vector */
 	local_vec->iov_len = NUMBER_OF_BYTES_TO_READ * data_size;
@@ -279,7 +313,7 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	for (i = 0; i < NUMBER_OF_BYTES_TO_READ * data_size; i += data_size)
 	{
 		sprintf(addr_string, "%p", (void*)(remote_vec->iov_base + i));
-		sprintf(value_string, "%i", ((byte*)local_vec->iov_base)[i]);
+		determine_value_string(value_string, *args->data_type_mask, local_vec, i);
 
 		gtk_list_store_append(store, &iter);
 		gtk_list_store_set(store, &iter,
