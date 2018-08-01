@@ -145,6 +145,9 @@ int main(int argc, char *argv[])
 	gtk_tree_view_column_add_attribute(address_column, address_renderer, "text", 0);
 	gtk_tree_view_column_add_attribute(value_column, value_renderer, "text", 1);
 
+	/* Populate the bitmask with the default value */
+	update_data_type(NULL, &data_type_bitmask);
+
 	g_object_unref(builder);
 	g_object_unref(address_list_store);
 
@@ -262,13 +265,13 @@ void determine_value_string(char* value_string, char bitmask, struct iovec* loca
 	else
 	{
 		if ((bitmask & 0x0F) == 1)
-                        sprintf(value_string, "%u", ((byte*)local_vec->iov_base)[i]);
-                else if ((bitmask & 0x0F) == 2)
-                        sprintf(value_string, "%u", ((short*)local_vec->iov_base)[i]);
-                else if ((bitmask & 0x0F) == 4)
-                        sprintf(value_string, "%u", ((int*)local_vec->iov_base)[i]);
-                else
-                        sprintf(value_string, "%llu", ((long long*)local_vec->iov_base)[i]);
+			sprintf(value_string, "%u", ((byte*)local_vec->iov_base)[i]);
+		else if ((bitmask & 0x0F) == 2)
+			sprintf(value_string, "%u", ((short*)local_vec->iov_base)[i]);
+		else if ((bitmask & 0x0F) == 4)
+			sprintf(value_string, "%u", ((int*)local_vec->iov_base)[i]);
+		else
+			sprintf(value_string, "%llu", ((long long*)local_vec->iov_base)[i]);
 	}
 }
 
