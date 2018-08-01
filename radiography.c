@@ -257,8 +257,7 @@ void determine_value_string(char* value_string, char bitmask, struct iovec* loca
 		else
 			sprintf(value_string, "%f", ((double*)local_vec->iov_base)[i / data_size]);
 	}
-
-	if ((bitmask & 0x80) == 0)
+	else if ((bitmask & 0x80) == 0)
 	{
 		if (data_size == 1)
 			sprintf(value_string, "%i", ((char*)local_vec->iov_base)[i / data_size]);
