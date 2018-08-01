@@ -48,6 +48,7 @@ typedef struct
 	GtkListStore*		list_store;
 	pid_t* 				pid;
 	char*				editing;
+	char*				data_type_mask;
 } edit_s;
 
 /* An enum representing what the two different columns store */
@@ -118,6 +119,7 @@ int main(int argc, char *argv[])
 	edit_struct->list_store = address_list_store;
 	edit_struct->pid = &target_pid;
 	edit_struct->editing = &editing;
+	edit_struct->data_type_mask = &data_type_bitmask;
 
 	/* Connect signals with callback functions */
 	gtk_builder_connect_signals(builder, NULL);
@@ -175,7 +177,7 @@ void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_tex
 	GtkTreeIter 			iter;
 	struct iovec*			local;
 	struct iovec*			remote;
-	byte					value_to_poke;
+	unsigned long long		value_to_poke;
 	gchar*					buffer;
 
 	args = (edit_s*)user_data;
@@ -185,15 +187,18 @@ void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_tex
 		perror("Error editing cell");
 	}
 
+	/* Get data size */
+	int data_size = *args->data_type_mask & 0x0F;
+
 	/* Set up the iovecs */
 	local = malloc(sizeof(struct iovec));
 	remote = malloc(sizeof(struct iovec));
 
 	local->iov_base = &value_to_poke;
-	local->iov_len = 1;
+	local->iov_len = data_size;
 	gtk_tree_model_get(GTK_TREE_MODEL(args->list_store), &iter, COLUMN_ADDRESS, &buffer, -1);
 	remote->iov_base = (void*)strtoll(buffer, NULL, 16);
-	remote->iov_len = 1;
+	remote->iov_len = data_size;
 
 	/* Actually edit process memory */
 	if (process_vm_writev(*args->pid, local, 1, remote, 1, 0) == -1)
@@ -330,7 +335,7 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	/* Set the update callback */
 	if (!args->has_timer)
 	{
-		/*g_timeout_add(100, update_list, user_data);*/
+		g_timeout_add(100, update_list, user_data);
 		args->has_timer = 1;
 	}
 
