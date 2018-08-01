@@ -9,7 +9,7 @@
 #define GET_WINDOW(builder ,x) GTK_WINDOW(gtk_builder_get_object(builder, x))
 #define GET_ENTRY(builder, x) GTK_ENTRY(gtk_builder_get_object(builder, x))
 #define GET_COLUMN(builder, x) GTK_TREE_VIEW_COLUMN(gtk_builder_get_object(builder, x))
-#define GET_LIST(builder, x) GTK_COMBO_BOX_TEXT(gtk_builder_get_object(builder, x))
+#define GET_LIST(builder, x) GTK_COMBO_BOX(gtk_builder_get_object(builder, x))
 
 #define BUFFER_SIZE 1024
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	GtkListStore*			address_list_store;
 	GtkCellRenderer*		address_renderer;
 	GtkCellRenderer*		value_renderer;
-	GtkComboBoxText*		data_type_box;
+	GtkComboBox*			data_type_box;
 
 	gtk_init(&argc, &argv);
 
@@ -242,36 +242,38 @@ void attach_to_process(GtkWidget* button, gpointer user_data)
 
 void determine_value_string(char* value_string, char bitmask, struct iovec* local_vec, int i)
 {
+	int data_size = bitmask & 0x0F;
+
 	/* Handle float and double */
 	if ((bitmask & 0x40) != 0)
 	{
-		if ((bitmask & 0x0F) == 4)
-			sprintf(value_string, "%f", ((float*)local_vec->iov_base)[i]);
+		if (data_size == 4)
+			sprintf(value_string, "%f", ((float*)local_vec->iov_base)[i / data_size]);
 		else
-			sprintf(value_string, "%f", ((double*)local_vec->iov_base)[i]);
+			sprintf(value_string, "%f", ((double*)local_vec->iov_base)[i / data_size]);
 	}
 
 	if ((bitmask & 0x80) == 0)
 	{
-		if ((bitmask & 0x0F) == 1)
-			sprintf(value_string, "%i", ((byte*)local_vec->iov_base)[i]);
-		else if ((bitmask & 0x0F) == 2)
-			sprintf(value_string, "%i", ((short*)local_vec->iov_base)[i]);
-		else if ((bitmask & 0x0F) == 4)
-			sprintf(value_string, "%i", ((int*)local_vec->iov_base)[i]);
+		if (data_size == 1)
+			sprintf(value_string, "%i", ((char*)local_vec->iov_base)[i / data_size]);
+		else if (data_size == 2)
+			sprintf(value_string, "%i", ((short*)local_vec->iov_base)[i / data_size]);
+		else if (data_size == 4)
+			sprintf(value_string, "%i", ((int*)local_vec->iov_base)[i / data_size]);
 		else
-			sprintf(value_string, "%lld", ((long long*)local_vec->iov_base)[i]);
+			sprintf(value_string, "%lld", ((long long*)local_vec->iov_base)[i / data_size]);
 	}
 	else
 	{
-		if ((bitmask & 0x0F) == 1)
-			sprintf(value_string, "%u", ((byte*)local_vec->iov_base)[i]);
-		else if ((bitmask & 0x0F) == 2)
-			sprintf(value_string, "%u", ((short*)local_vec->iov_base)[i]);
-		else if ((bitmask & 0x0F) == 4)
-			sprintf(value_string, "%u", ((int*)local_vec->iov_base)[i]);
+		if (data_size == 1)
+			sprintf(value_string, "%u", ((byte*)local_vec->iov_base)[i / data_size]);
+		else if (data_size == 2)
+			sprintf(value_string, "%u", ((unsigned short*)local_vec->iov_base)[i / data_size]);
+		else if (data_size == 4)
+			sprintf(value_string, "%u", ((unsigned int*)local_vec->iov_base)[i / data_size]);
 		else
-			sprintf(value_string, "%llu", ((long long*)local_vec->iov_base)[i]);
+			sprintf(value_string, "%llu", ((unsigned long long*)local_vec->iov_base)[i / data_size]);
 	}
 }
 
@@ -328,7 +330,7 @@ void jump_to_address(GtkWidget* button, gpointer user_data)
 	/* Set the update callback */
 	if (!args->has_timer)
 	{
-		g_timeout_add(100, update_list, user_data);
+		/*g_timeout_add(100, update_list, user_data);*/
 		args->has_timer = 1;
 	}
 
@@ -390,7 +392,7 @@ gboolean update_list(gpointer data)
 				   COLUMN_VALUE, value_string,
 				   -1);
 		valid = gtk_tree_model_iter_next(GTK_TREE_MODEL(store), &iter);
-		i++;
+		i += data_size;
 	}
 
 	free(local_vec->iov_base);
