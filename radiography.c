@@ -177,11 +177,22 @@ void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_tex
 	GtkTreeIter 			iter;
 	struct iovec*			local;
 	struct iovec*			remote;
-	unsigned long long		value_to_poke;
-	gchar*					buffer;
+	void*				value_to_poke;
+	gchar*				buffer;
 
 	args = (edit_s*)user_data;
-	value_to_poke = atoi(new_text);
+
+	if ((*args->data_type_mask & 0x40) != 0)
+	{
+		value_to_poke = malloc(sizeof(double));
+		*((double*)value_to_poke) = atof(new_text);
+	}
+	else
+	{
+		value_to_poke = malloc(sizeof(long long));
+		*((long long *)value_to_poke) = atoll(new_text);
+	}
+
 	if (!gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(args->list_store), &iter, path_string))
 	{
 		perror("Error editing cell");
@@ -208,6 +219,7 @@ void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_tex
 
 	gtk_list_store_set(args->list_store, &iter, COLUMN_VALUE, new_text, -1);
 	*args->editing = 0;
+	free(value_to_poke);
 }
 
 void attach_to_process(GtkWidget* button, gpointer user_data)
