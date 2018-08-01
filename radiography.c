@@ -180,7 +180,7 @@ void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_tex
 	void*				value_to_poke;
 	gchar*				buffer;
 
-	args = (edit_s*)user_data;
+	args = user_data;
 
 	if ((*args->data_type_mask & 0x40) != 0)
 	{
@@ -205,7 +205,7 @@ void renderer_edit(GtkCellRendererText* cell, gchar* path_string, gchar* new_tex
 	local = malloc(sizeof(struct iovec));
 	remote = malloc(sizeof(struct iovec));
 
-	local->iov_base = &value_to_poke;
+	local->iov_base = value_to_poke;
 	local->iov_len = data_size;
 	gtk_tree_model_get(GTK_TREE_MODEL(args->list_store), &iter, COLUMN_ADDRESS, &buffer, -1);
 	remote->iov_base = (void*)strtoll(buffer, NULL, 16);
