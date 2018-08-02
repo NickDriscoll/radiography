@@ -273,9 +273,9 @@ void determine_value_string(char* value_string, char bitmask, struct iovec* loca
 	if ((bitmask & 0x40) != 0)
 	{
 		if (data_size == 4)
-			sprintf(value_string, "%f", (float)((char*)local_vec->iov_base)[i]);
+			sprintf(value_string, "%f", *((float*)(local_vec->iov_base + i)));
 		else
-			sprintf(value_string, "%f", (double)((char*)local_vec->iov_base)[i]);
+			sprintf(value_string, "%f", *((double*)(local_vec->iov_base + i)));
 	}
 	else if ((bitmask & 0x80) == 0)
 	{
