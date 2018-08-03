@@ -68,7 +68,7 @@
             </child>
             <child>
               <object class="GtkButton" id="jump_button">
-                <property name="label" translatable="yes">Jump</property>
+                <property name="label" translatable="yes">Read Memory</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
@@ -113,7 +113,15 @@
               </packing>
             </child>
             <child>
-              <placeholder/>
+              <object class="GtkLabel" id="data_type_label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Interpret bytes as:</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
+              </packing>
             </child>
             <child>
               <placeholder/>
