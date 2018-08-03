@@ -269,8 +269,13 @@ void determine_value_string(char* value_string, char bitmask, struct iovec* loca
 {
 	int data_size = bitmask & 0x0F;
 
+	/* Handle pointer */
+	if ((bitmask & 0x20) != 0)
+	{
+		sprintf(value_string, "%p", (void*)(*((intptr_t*)(local_vec->iov_base + i))));
+	}
 	/* Handle float and double */
-	if ((bitmask & 0x40) != 0)
+	else if ((bitmask & 0x40) != 0)
 	{
 		if (data_size == 4)
 			sprintf(value_string, "%f", *((float*)(local_vec->iov_base + i)));
@@ -480,6 +485,11 @@ void update_data_type(GtkComboBox *widget, gpointer user_data)
 		case 9:		/* double */
 		{
 			*mask = 0x48;
+			break;
+		}
+		case 10:	/* pointer */
+		{
+			*mask = 0x20 | sizeof(void*);
 			break;
 		}
 	}
